@@ -1,0 +1,1286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>
+    Online Python Compiler (Editor)  </title>
+  <link rel="shortcut icon" href="https://www.programiz.com/sites/tutorial2program/files/favicon.png" />
+    <link rel="preconnect" href="https://fonts.programiz.com" crossorigin />
+  <link rel="preconnect" href="https://www.googletagmanager.com" />
+  <link rel="dns-prefetch" href="https://securepubads.g.doubleclick.net" />
+  <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+  <link rel="dns-prefetch" href="https://fms.360yield.com" />
+  <link rel="dns-prefetch" href="https://client.aps.amazon-adsystem.com" />
+  <link rel="dns-prefetch" href="https://cdn.doubleverify.com" />
+  <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+  <link rel="dns-prefetch" href="https://edge.hyth.io" />
+  <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    <link rel="stylesheet" href="https://fonts.programiz.com/compiler.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f2023" id="theme-color-meta" />
+
+      <style>
+    @media (min-width: 992px) {
+      /* var(--pgz-banner-offset, 80px): banner.js is position:fixed (not
+         normal flow -- it never pushes anything down on its own) and it
+         already ships its own integration mechanism for exactly this: it
+         sets --pgz-banner-offset on document.documentElement to its real
+         rendered height right when it inserts #pgz-banner, and removes the
+         property when the banner closes (both confirmed by reading its
+         source). Reading that var here, with 80px as the fallback for the
+         window before banner.js has run at all, means the reservation
+         always matches banner.js's own real height and its own open/close
+         lifecycle -- one source of truth, not a second, independently
+         measured/maintained copy of the same number.
+
+         Previously this was hardcoded to a plain 80px, corrected later by a
+         MutationObserver (bannerObserver, further down in <body>) that
+         re-measured bannerElement.offsetHeight on every mutation and wrote
+         it as an inline style. That JS-set inline style always overrides
+         this CSS rule outright, regardless of specificity -- so any moment
+         where that measurement ran before the banner's own content had
+         fully settled (image load, internal layout) clobbered an already-
+         correct CSS value with a transiently wrong one, then self-corrected
+         -- a real, visible shift, even though both values eventually landed
+         on the same number. Reading banner.js's own var instead removes
+         that entire race: there's no re-measurement to race against banner
+         .js's own rendering, because the value comes from banner.js itself,
+         updated whenever banner.js itself decides it's changed. */
+      /* !important: playground.css's own `html, body { padding: 0; }` reset (public/css/
+         playground.css) is the exact same specificity (element selector) as this rule and loads
+         later (an external <link>, after this inline <style>), so without !important it silently
+         wins and this reservation never actually applies at all - confirmed live: before
+         banner.js has run, .header rendered at the very top (no reservation whatsoever), not
+         even the 80px fallback this rule is supposed to guarantee. banner.js's own injected
+         style (confirmed by reading its shipped source) already uses `!important` for this exact
+         reason - matching it here just closes the same gap for the window before banner.js has
+         run yet, which its own rule can't cover since it doesn't exist until banner.js does. */
+      body {
+        padding-top: var(--pgz-banner-offset, 80px) !important;
+      }
+
+      /* #root's own CSS default is height:100vh (.container in playground.css).
+         Without this, that reservation only ever gets subtracted later,
+         which is a massive layout shift given #root is effectively the
+         entire app shell (measured: 0.54 CLS contribution from #root alone,
+         dwarfing everything else on this page). Setting the correct height
+         here, in plain CSS, means it's right from the very first layout
+         pass -- no JS round trip to wait on, and no re-measurement to race
+         against banner.js's own rendering (see the comment on `body` above). */
+      #root {
+        height: calc(100vh - var(--pgz-banner-offset, 80px));
+      }
+    }
+  </style>
+  <script>
+    (function () {
+      const PROMO_BANNER_SCRIPT_URL = "https://storage.googleapis.com/programiz-pro-banner/banner.js";
+      // #banner-skeleton (rendered right after <body>, see its own comment there) is only ever
+      // removed from here - there's no other code path that decides "no real banner is coming."
+      // Safe to call more than once (e.g. both a failure path and, hypothetically, a late
+      // successful one racing) since it no-ops once the element's already gone.
+      const removeBannerSkeleton = () => {
+        const skeletonEl = document.getElementById("banner-skeleton");
+        if (skeletonEl) {
+          skeletonEl.remove();
+        }
+      };
+      fetch(PROMO_BANNER_SCRIPT_URL)
+        .then((response) => response.ok ? response.text() : Promise.reject())
+        .then((source) => {
+          if (!/Date\.UTC\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/.test(source)) {
+            // Format didn't match -- fail closed, skip the banner (same as the .catch() below,
+            // just not an actual rejection). No real banner is ever coming down this path either.
+            removeBannerSkeleton();
+            return;
+          }
+          const inject = () => {
+            // banner.js (external/vendor-controlled, see #banner-skeleton's own comment) inserts
+            // #pgz-banner itself once it runs - there's no load event or callback it offers to
+            // hook into directly, so a MutationObserver on document.body is the only way to
+            // notice that without polling. Disconnects itself once found so this doesn't run
+            // forever on a page that already got its real banner.
+            let bannerAppearedObserver = null;
+            if (typeof MutationObserver === "function") {
+              bannerAppearedObserver = new MutationObserver(() => {
+                if (document.getElementById("pgz-banner")) {
+                  removeBannerSkeleton();
+                  bannerAppearedObserver.disconnect();
+                }
+              });
+              bannerAppearedObserver.observe(document.body, { childList: true, subtree: true });
+            }
+            const bannerScript = document.createElement("script");
+            bannerScript.src = PROMO_BANNER_SCRIPT_URL;
+            bannerScript.dataset.utm_source = "compiler";
+            // The fetch above only confirms banner.js's source still looks like what's expected
+            // (a Date.UTC(...) cutoff is present) - it says nothing about whether that cutoff has
+            // actually passed. banner.js runs that exact check itself, entirely client-side, and
+            // simply does nothing (never inserts #pgz-banner) if the campaign has ended - fetching
+            // this URL from a real, current campaign as of this writing still returns a script
+            // whose own embedded cutoff is in the future, but $showPromoBanner (config.php) stays
+            // true unconditionally on real production hosts regardless of that date
+            // (isPromoCampaignActive() is only ever consulted for preview hosts - see its own
+            // comment), so this page will keep reserving space and fetching banner.js long after
+            // the campaign itself ends. Without this, #banner-skeleton would linger forever from
+            // that point on: the MutationObserver above only fires once #pgz-banner actually
+            // appears, which never happens once banner.js's own internal date check starts
+            // failing. `load` (not a fixed delay) fires only once banner.js - a plain, synchronous,
+            // non-module <script> - has fully finished executing, so by then it's already made its
+            // own real/no-op decision either way; checking here catches exactly the "loaded fine,
+            // chose not to render" case the observer above can't.
+            bannerScript.addEventListener("load", () => {
+              if (!document.getElementById("pgz-banner")) {
+                removeBannerSkeleton();
+                if (bannerAppearedObserver) {
+                  bannerAppearedObserver.disconnect();
+                }
+              }
+            });
+            // Separate from the format/fetch validation above: that already confirmed this exact
+            // URL is reachable moments ago, but a `<script src>` request specifically (unlike the
+            // earlier fetch()) is exactly the shape ad-blockers commonly target by URL pattern for
+            // anything banner-like - if that happens, `load` above never fires at all (no
+            // execution to wait for), and the skeleton would otherwise never come off either.
+            bannerScript.addEventListener("error", () => {
+              removeBannerSkeleton();
+              if (bannerAppearedObserver) {
+                bannerAppearedObserver.disconnect();
+              }
+            });
+            document.body.appendChild(bannerScript);
+          };
+          // document.body doesn't exist yet this early in <head> -- in
+          // practice the fetch's network latency means it almost always
+          // does by the time this resolves, but DOMContentLoaded is the
+          // correct fallback rather than assuming that timing.
+          if (document.body) {
+            inject();
+          } else {
+            document.addEventListener("DOMContentLoaded", inject, { once: true });
+          }
+        })
+        .catch(() => {
+          // Fetch failed (network blip, CORS change, endpoint down) -- fail closed, skip the
+          // banner. No real banner is ever coming, so the skeleton would otherwise linger forever.
+          removeBannerSkeleton();
+        });
+    })();
+  </script>
+  
+  <link rel="canonical" href="https://www.programiz.com/python-programming/online-compiler/" />
+  <meta name="description" content="Write and run your code using our online Python compiler (editor). Enjoy additional features like code sharing, dark mode and code visualization." />
+
+    <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://programiz.com/python-programming/online-compiler/" />
+  <meta property="og:title" content="Online Python Compiler (Editor)" />
+  <meta property="og:description" content="Write and run your code using our online Python compiler (editor). Enjoy additional features like code sharing, dark mode and code visualization." />
+  <meta property="og:image" content="https://programiz.com/online-compiler/assets/logos/compiler_logo.png" />
+
+    <meta name="twitter:card" content="summary">
+  <meta property="twitter:url" content="https://programiz.com/python-programming/online-compiler/" />
+  <meta name="twitter:title" content="Online Python Compiler (Editor)">
+  <meta name="twitter:description" content="Write and run your code using our online Python compiler (editor). Enjoy additional features like code sharing, dark mode and code visualization." />
+  <meta name="twitter:image" content="https://programiz.com/online-compiler/assets/logos/compiler_logo.png" />
+
+      <script>
+    var url = window.location.href;
+    window.googletag = window.googletag || {
+      cmd: []
+    };
+    window.googletag.cmd.push(function() {
+      switch (true) {
+        case url.includes("/python-programming/numpy"):
+          window.googletag.pubads().setTargeting('prog_lang', 'numpy');
+          break;
+        case url.includes("/sql"):
+          window.googletag.pubads().setTargeting('prog_lang', 'sql');
+          break;
+        case url.includes("/c-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'c_programming');
+          break;
+        case url.includes("/cpp-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'c_plus_plus');
+          break;
+        case url.includes("/csharp-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'c_sharp_lang');
+          break;
+        case url.includes("/dsa"):
+          window.googletag.pubads().setTargeting('prog_lang', 'dsa');
+          break;
+        case url.includes("/java-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'java');
+          break;
+        case url.includes("/javascript"):
+          window.googletag.pubads().setTargeting('prog_lang', 'javascript');
+          break;
+        case url.includes("/kotlin-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'kotlin');
+          break;
+        case url.includes("/python-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'python');
+          break;
+        case url.includes("/swift-programming"):
+          window.googletag.pubads().setTargeting('prog_lang', 'swift');
+          break;
+        case url.includes("/typescript"):
+          window.googletag.pubads().setTargeting('prog_lang', 'typescript');
+          break;
+        case url.includes("/scala"):
+          window.googletag.pubads().setTargeting('prog_lang', 'scala');
+          break;
+        case url.includes("/dart"):
+          window.googletag.pubads().setTargeting('prog_lang', 'dart');
+          break;
+        case url.includes("/ruby"):
+          window.googletag.pubads().setTargeting('prog_lang', 'ruby');
+          break;
+        case url.includes("/bash"):
+          window.googletag.pubads().setTargeting('prog_lang', 'bash');
+          break;
+      }
+
+      window.googletag.pubads().enableAsyncRendering();
+      window.googletag.pubads().disableInitialLoad();
+    });
+
+    const injectPgScript = (src, isAsync, onLoadCallback, target) => {
+      if (!src) return;
+      const script = document.createElement("script");
+      script.src = src;
+      if (isAsync) script.async = isAsync;
+      if (onLoadCallback) script.onload = onLoadCallback;
+
+      (target || document.head).appendChild(script);
+    };
+
+    const initiatePgAds = () => {
+      !!window.__tcfapi && window.__tcfapi("addEventListener", 2, (tcData, success) => {
+        if (success && (tcData.eventStatus === "useractioncomplete" || tcData.eventStatus === "tcloaded" || tcData.gdprApplies === false)) {
+          if (!window._initAds) {
+            window._initAds = true;
+
+            injectPgScript("//fms.360yield.com/ow/bundles/live/pubgalaxy/publishers/Programizcomnew.min.js", true);
+            injectPgScript("//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js", true);
+            injectPgScript("//btloader.com/tag?o=5184339635601408&upapi=true", true);
+            injectPgScript("//srvb1.com/o.js?uid=3de5c6e969bcbef63f8b7a59", true, null, document.body);
+          }
+        }
+      });
+    };
+
+        injectPgScript("https://securepubads.g.doubleclick.net/tag/js/gpt.js?network-code=8095840", true, () => {
+      window.googlefc = window.googlefc || {
+        callbackQueue: []
+      };
+      window.googlefc.callbackQueue.push({
+        "CONSENT_API_READY": initiatePgAds
+      });
+    });
+  </script>
+
+  <script type="text/javascript">
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(function() {
+      window.googletag.pubads().enableAsyncRendering();
+      window.googletag.pubads().disableInitialLoad();
+    });
+    (adsbygoogle = window.adsbygoogle || []).pauseAdRequests = 1;
+  </script>
+    <script>
+    // GA4 initialization. Two separate properties, not one property with an environment tag on
+    // each event: dev.programiz.com, every preview slot, stage, and local all report to the
+    // non-production property (G-CJLR7TBQ1X) - only $isProductionHost's real whitelist
+    // (config.php, the same one that already gates ad tags) reports to the production one
+    // (G-YJM03XN8Q2). Keeps non-production traffic out of production's data by construction,
+    // not by a filter someone has to remember to apply when querying it.
+    (function(w, d) {
+      const gaId = 'G-YJM03XN8Q2';
+      w.dataLayer = w.dataLayer || [];
+
+      function gtag() {
+        w.dataLayer.push(arguments);
+      }
+      w.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', gaId, {
+        send_page_view: false
+      });
+    })(window, document);
+  </script>
+  
+    <script>
+    (function(w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({
+        'gtm.start': new Date().getTime(),
+        event: 'gtm.js'
+      });
+      var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s),
+        dl = l != 'dataLayer' ? '&l=' + l : '';
+      j.async = true;
+      j.src =
+        'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+      f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-TKXT7MH');
+  </script>
+  
+    <meta http-equiv="x-dns-prefetch-control" content="on" />
+  <link rel="dns-prefetch" href="//www.googletagservices.com" />
+  <link rel="dns-prefetch" href="//c.amazon-adsystem.com" />
+    <link rel="dns-prefetch" href="//adservice.google.com" />
+  <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
+
+    <link rel="stylesheet" href="https://cdn.playground-v2.programiz.com/build/styles.f1e166f009e0e16410c3.css" />
+  
+    <script>
+    // Exposed for client.js (a plain script, not a module - can't import this) to read when
+    // rendering the Turnstile widget the first time the contact modal opens.
+    window.__TURNSTILE_SITE_KEY__ = "0x4AAAAAAEejdPAnhRqW6fHy";
+  </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  
+</head>
+
+<body>
+      <div id="banner-skeleton" aria-hidden="true"></div>
+        <div class="container dark-mode tw:w-screen tw:overflow-hidden tw:relative" id="root"
+    data-lang="python">
+        <script>
+      (function () {
+        try {
+          var root = document.getElementById('root');
+          var raw = localStorage.getItem('playground');
+          var stored = raw ? JSON.parse(raw) : null;
+          var isDark = stored && stored.darkMode ? !!stored.darkMode.status : root.dataset.lang === 'python';
+
+          if (!isDark) {
+            root.classList.remove('dark-mode');
+            root.setAttribute('data-viz-theme', 'light');
+          }
+        } catch (e) {
+          // Leave the server-rendered dark default in place - matches getDarkModeStatus()'s own
+          // fail-safe (any read/parse error there falls through to the same dark default too).
+        }
+      })();
+    </script>
+        <div
+      class="spinner tw:bg-surface tw:dark:bg-[#1c2130] tw:fixed tw:top-0 tw:left-0 tw:z-[2147483001] tw:h-full tw:w-full tw:flex tw:justify-center tw:items-center"
+      style="display: none">
+      <div
+        class="loader tw:opacity-80 tw:text-primary tw:dark:text-white tw:text-[20vh] tw:font-bold tw:font-[Consolas,Menlo,Monaco,monospace]">
+        <span>{</span><span>}</span>
+      </div>
+    </div>
+    <div class="mobile-nav-drawer tw:hidden tw:relative">
+      <div
+        class="nav-backdrop tw:absolute tw:bg-black/60 tw:z-[999] tw:top-0 tw:left-[-999px] tw:w-screen tw:h-[1000px]">
+      </div>
+      <div
+        class="nav-menu tw:z-[1000] tw:w-[calc(100vw-52px)] tw:h-[1000px] tw:absolute tw:left-[-999px] tw:top-0 tw:bg-white tw:dark:bg-[#383b40] tw:pt-[26px] tw:pr-0 tw:pb-[26px] tw:pl-6 tw:box-border tw:transition-all tw:duration-300 tw:ease-[ease] tw:overflow-hidden">
+        <div class="nav-header-wrapper tw:flex tw:justify-between">
+          <div class="nav-logo-title-wrapper">
+            <a href="https://www.programiz.com/" target="_blank" class="nav-logo-link">
+                            <img id="nav-logo" class="tw:w-[68px] tw:h-[23px]" alt="Programiz"
+                src="https://cdn.playground-v2.programiz.com/assets/logos/logo-inverted.svg" />
+            </a>
+          </div>
+          <button type="button"
+            class="close-nav-btn tw:mt-0 tw:mr-5 tw:mb-0 tw:ml-0 tw:border-0 tw:bg-transparent"
+            title="Close navigation">
+            <img class="svg" src="https://cdn.playground-v2.programiz.com/assets/icons/close.svg" alt="" />
+          </button>
+        </div>
+        <div class="nav-menu-list tw:pt-[40px] tw:overflow-y-scroll tw:h-[calc(100dvh-90px)]">
+          <a target="_blank"
+            href="https://www.programiz.com/python-programming/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border python active"
+            title="Online Python Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/python.svg" alt="Python Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online Python Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/r/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border r " class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border r"
+            title="Online R Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/r.svg" alt="R Programming Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online R Compiler
+            </span>
+          </a>
+          <a target="_blank" href="https://www.programiz.com/sql/online-compiler/" class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border sql"
+            title="Online SQL Editor">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/sql.svg" alt="SQL Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online SQL Editor
+            </span>
+          </a>
+          <a target="_blank" href="https://www.programiz.com/html/online-compiler/" class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border html"
+            title="Online HTML/CSS Editor">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/html.svg" alt="HTML/CSS Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online HTML/CSS Editor
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/java-programming/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border java " title="Online Java Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/java.svg" alt="Java Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online Java Compiler
+            </span>
+          </a>
+                    <a target="_blank"
+            href="https://www.programiz.com/c-programming/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border c " title="Online C Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/c.svg" alt="C Programming Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online C Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/cpp-programming/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border cpp " title="Online C++ Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/cpp.svg" alt="C++ Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online C++ Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/csharp-programming/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border csharp " title="Online C# Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/csharp.svg" alt="C# Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online C# Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/javascript/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border javascript "
+            title="Online JavaScript Compiler (Editor)">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/javascript.svg" alt="JavaScript Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online JavaScript Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/typescript/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border typescript "
+            title="Online Typescript Compiler (Editor)">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg"
+                src="https://cdn.playground-v2.programiz.com/assets/icons/typescript.svg" alt="Typescript Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online Typescript Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/golang/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border golang "
+            title="Online GoLang Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/golang.svg" alt="Golang Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online GoLang Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/rust/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border rust " title="Online Rust Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/rust.svg" alt="Rust Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online Rust Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/scala/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border scala "
+            title="Scala Online Compiler (Editor)">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/scala.svg" alt="Scala Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Scala Online Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/dart/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border dart "
+            title="Dart Online Compiler (Editor)">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/dart.svg" alt="Dart Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Dart Online Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/ruby/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border ruby "
+            title="Ruby Online Compiler (Editor)">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/ruby.svg" alt="Ruby Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Ruby Online Compiler
+            </span>
+          </a>
+                    <a target="_blank"
+            href="https://www.programiz.com/php/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border php " title="Online PHP Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/php.svg" alt="PHP Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online PHP Compiler
+            </span>
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/swift/online-compiler/"
+            class="change-lang-row tw:inline-flex tw:items-center tw:mb-4 tw:w-full tw:box-border swift " title="Online Swift Compiler">
+            <span class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px]">
+              <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/swift.svg" alt="Swift Online" />
+            </span>
+            <span class="nav-menu-text tw:ml-4 tw:font-medium tw:text-sm">
+              Online Swift Compiler
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="share-link-generating-modal tw:hidden tw:relative" style="display: none;">
+      <div class="modal-backdrop-share">
+      </div>
+
+      <div class="modal-content">
+        <div
+          class="modal-header tw:flex tw:justify-between tw:items-center tw:text-text tw:dark:text-white/87 tw:pt-6 tw:px-6 tw:pb-4">
+          <h2 class="modal-title tw:m-0 tw:text-[24px] tw:font-medium tw:leading-[36px]">Generating Link</h2>
+          <h2 class="modal-title modal-title-mob tw:m-0 tw:text-[24px] tw:font-medium tw:leading-[36px]">Generating
+            Link</h2>
+        </div>
+        <div class="modal-body tw:pt-0 tw:px-6 tw:pb-6">
+          <div class="progress-bar tw:w-full tw:bg-border tw:dark:bg-white/20 tw:rounded-sm">
+            <div class="progress tw:w-0 tw:h-2 tw:bg-primary tw:rounded-sm"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        <div class="notification " id="notification"
+      style="display:none;">
+      <div
+        class="check-icon-wrapper tw:bg-danger tw:dark:bg-white/20 tw:flex tw:items-center tw:justify-center tw:py-[14px] tw:px-2 tw:border-r tw:border-r-success">
+        <img src="https://cdn.playground-v2.programiz.com/assets/icons/check.svg" alt="check">
+      </div>
+
+      <div class="notification-message-wrapper tw:flex tw:items-center tw:h-full tw:w-max">
+        <p class="notification-message tw:text-[16px] tw:leading-[24px] tw:font-medium tw:pt-3 tw:pr-0 tw:pb-3 tw:pl-2 tw:m-0">
+        </p>
+        <button type="button"
+          class="close-modal-notification tw:cursor-pointer tw:outline-none tw:bg-transparent tw:border-0 tw:flex tw:items-center tw:pt-[10px] tw:pr-2 tw:pb-[10px] tw:pl-3"
+          title="Close">
+          <img class="svg" src="https://cdn.playground-v2.programiz.com/assets/icons/close-v2-small.svg" alt="" />
+        </button>
+      </div>
+    </div>
+
+        <div class=" share-link-modal tw:hidden" style="display: none;">
+      <div class="modal-backdrop-share">
+      </div>
+
+      <div class="modal-content">
+        <div
+          class="modal-header tw:flex tw:justify-between tw:items-center tw:text-text tw:dark:text-white/87 tw:pt-6 tw:px-6 tw:pb-4">
+          <h2 class="modal-title tw:m-0 tw:text-[24px] tw:font-medium tw:leading-[36px]">Share your code</h2>
+          <h2 class="modal-title modal-title-mob tw:m-0 tw:text-[24px] tw:font-medium tw:leading-[36px]">Share code
+          </h2>
+          <button type="button"
+            class="close-modal tw:cursor-pointer tw:outline-none tw:bg-transparent tw:border-0" title="Close">
+            <img class="svg" src="https://cdn.playground-v2.programiz.com/assets/icons/close.svg" alt="" />
+          </button>
+        </div>
+
+        <div class="modal-body tw:pt-0 tw:px-6 tw:pb-6">
+          <div
+            class="share-code-container tw:flex tw:items-center tw:justify-between tw:bg-[#f8faff] tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:py-3 tw:px-4 tw:text-[16px] tw:leading-[24px]">
+            <input type="text"
+              class="share-code-value tw:flex tw:grow tw:border-0 tw:bg-transparent tw:w-full tw:text-text tw:dark:text-white/87 tw:font-normal tw:text-sm tw:p-0"
+              value="https://www.programiz.com/online-compiler/XXXXXXXXX" readonly />
+          </div>
+          <button
+            class="share-code-copy-btn tw:w-full tw:py-2 tw:px-0 tw:text-sm tw:mt-4 tw:bg-primary tw:hover:bg-primary-hover tw:text-white tw:border-0 tw:rounded-sm tw:font-bold"
+            title="Copy Link">Copy Link</button>
+          <button
+            class="share-code-copy-btn code-copied-success tw:bg-success tw:items-center tw:justify-center tw:gap-2 tw:hidden tw:flex"
+            title="Copied to clipboard">
+            <img src="https://cdn.playground-v2.programiz.com/assets/icons/check.svg" alt="success" class="svg">
+            Copied to clipboard
+          </button>
+
+                    <div class="social-wrapper">
+            <span>or share using</span>
+            <div id="social-icons">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="contact-modal tw:hidden" style="display: none;">
+      <div class="modal-backdrop-share"></div>
+
+      <div class="modal-content">
+        <div
+          class="modal-header tw:flex tw:justify-between tw:items-center tw:text-text tw:dark:text-white/87 tw:pt-6 tw:px-6 tw:pb-4">
+                    <h2 class="tw:m-0 tw:text-[24px] tw:font-medium tw:leading-[36px]">Contact us</h2>
+          <button type="button" class="close-contact-modal tw:cursor-pointer tw:outline-none tw:bg-transparent tw:border-0"
+            title="Close">
+            <img class="svg" src="https://cdn.playground-v2.programiz.com/assets/icons/close.svg" />
+          </button>
+        </div>
+
+        <form id="contact-form" class="modal-body tw:pt-0 tw:px-6 tw:pb-6 tw:flex tw:flex-col tw:gap-3">
+                    <div class="contact-form-field tw:flex tw:flex-col tw:gap-1">
+            <label for="contact-email" class="tw:text-xs tw:font-medium tw:text-text/70 tw:dark:text-white/70">Email
+              <span class="tw:text-danger">*</span></label>
+            <input type="email" id="contact-email" name="email" required maxlength="254"
+              class="tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:bg-transparent tw:text-text tw:dark:text-white/87 tw:text-sm tw:py-2 tw:px-3 tw:w-full tw:box-border"
+              placeholder="you@example.com" />
+          </div>
+
+          <div class="contact-form-field tw:flex tw:flex-col tw:gap-1">
+            <label for="contact-name" class="tw:text-xs tw:font-medium tw:text-text/70 tw:dark:text-white/70">Name</label>
+            <input type="text" id="contact-name" name="name" maxlength="120"
+              class="tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:bg-transparent tw:text-text tw:dark:text-white/87 tw:text-sm tw:py-2 tw:px-3 tw:w-full tw:box-border"
+              placeholder="Your name" />
+          </div>
+
+          <div class="contact-form-field tw:flex tw:flex-col tw:gap-1">
+            <label for="contact-category"
+              class="tw:text-xs tw:font-medium tw:text-text/70 tw:dark:text-white/70">Category <span
+                class="tw:text-danger">*</span></label>
+                        <select id="contact-category" name="category" required
+              style="background-image: url('https://cdn.playground-v2.programiz.com/assets/icons/chevron-down.svg'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 12px;"
+              class="tw:appearance-none tw:cursor-pointer tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:bg-transparent tw:text-text tw:dark:text-white/87 tw:text-sm tw:py-2 tw:pl-3 tw:pr-8 tw:w-full tw:box-border">
+                            <option value="" disabled selected>Select a category</option>
+              <option value="bug">Bug report</option>
+              <option value="feature">Feature request</option>
+              <option value="general">General query</option>
+              <option value="advertise">Advertise</option>
+            </select>
+          </div>
+
+          <div class="contact-form-field tw:flex tw:flex-col tw:gap-1">
+            <label for="contact-message"
+              class="tw:text-xs tw:font-medium tw:text-text/70 tw:dark:text-white/70">Message <span
+                class="tw:text-danger">*</span></label>
+            <textarea id="contact-message" name="message" required maxlength="5000" rows="4"
+              class="tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:bg-transparent tw:text-text tw:dark:text-white/87 tw:text-sm tw:py-2 tw:px-3 tw:w-full tw:box-border tw:resize-y"
+              placeholder="Tell us what's going on"></textarea>
+          </div>
+
+          <div class="contact-form-field tw:flex tw:flex-col tw:gap-1">
+            <label class="tw:text-xs tw:font-medium tw:text-text/70 tw:dark:text-white/70">Screenshot or recording
+              (optional, up to 3 files, 10MB each)</label>
+                        <input type="file" id="contact-attachments" name="attachments" multiple
+              accept="image/png,image/jpeg,image/webp,image/gif,video/webm,video/mp4"
+              class="tw:text-xs tw:text-text tw:dark:text-white/87 tw:cursor-pointer tw:file:mr-3 tw:file:py-1.5 tw:file:px-3 tw:file:rounded-sm tw:file:border tw:file:border-border tw:file:bg-transparent tw:file:hover:bg-black/5 tw:file:text-xs tw:file:font-medium tw:file:text-text tw:file:cursor-pointer" />
+            <ul id="contact-attachments-list" class="tw:flex tw:flex-col tw:gap-1 tw:m-0 tw:p-0 tw:list-none"></ul>
+          </div>
+
+                    <div id="contact-form-turnstile" class="contact-form-field"></div>
+
+          <p id="contact-form-error"
+            class="tw:hidden tw:text-danger tw:text-xs tw:m-0"></p>
+
+          <p class="contact-form-field tw:text-[11px] tw:text-text/50 tw:dark:text-white/50 tw:m-0">
+            Submitting this form sends your code, browser info, and IP address to our support team
+            to help resolve your issue.
+          </p>
+
+                    <button type="submit" id="contact-form-submit" disabled
+            class="tw:w-full tw:py-2 tw:px-0 tw:text-sm tw:mt-1 tw:bg-primary tw:hover:bg-primary-hover tw:disabled:opacity-50 tw:disabled:cursor-not-allowed tw:text-white tw:border-0 tw:rounded-sm tw:font-bold tw:cursor-pointer">
+            Submit
+          </button>
+
+          <div id="contact-form-success"
+            class="tw:hidden tw:items-center tw:justify-center tw:gap-2 tw:bg-success tw:text-white tw:text-sm tw:font-bold tw:py-2 tw:rounded-sm">
+            <img src="https://cdn.playground-v2.programiz.com/assets/icons/check.svg" alt="success" class="svg">
+            Thanks! We'll get back to you at your email.
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <div
+      class="wrapper has-adhesive-ad tw:bg-surface tw:flex tw:flex-col tw:h-full tw:w-full tw:max-h-full">
+      <div class="header tw:flex tw:justify-between tw:bg-white tw:h-[51px] tw:border-b tw:border-b-border">
+        <div class="header-wrapper tw:flex">
+          <div class="burger-menu tw:flex tw:items-center">
+            <button type="button"
+              class="burger-menu-btn tw:pt-0 tw:pr-0 tw:pb-0 tw:pl-4 tw:border-0 tw:bg-transparent"
+              title="Open navigation">
+              <img class="svg burger-menu-btn-icon" src="https://cdn.playground-v2.programiz.com/assets/icons/burger.svg" alt="" />
+            </button>
+          </div>
+          <div class="logo-wrapper tw:bg-white tw:flex tw:items-center tw:text-text/70 tw:dark:text-white">
+            <h1 class="logo-title-wrapper tw:m-0 tw:inline-block tw:text-left tw:translate-x-0 tw:left-0">
+              <a href="https://www.programiz.com/" target="_blank" class="logo-link tw:flex tw:flex-col tw:ml-4">
+                                <img id="logo" class="tw:w-[53px]" alt="Programiz"
+                  src="https://cdn.playground-v2.programiz.com/assets/logos/logo-inverted.svg" />
+                <span
+                  class="logo-sub-title-wrapper tw:text-[10px] tw:align-middle tw:font-normal tw:leading-[15px] tw:mt-[5px]">
+                  <span class="logo-sub-title">
+                    Python                    Online Compiler                  </span>
+                </span>
+              </a>
+            </h1>
+          </div>
+        </div>
+        <div class="compiler-header-ad tw:py-1 tw:px-0 tw:m-auto tw:hidden">
+                    <div id="div-gpt-ad-Programizcom36786" class="content-top-ad"></div>
+        </div>
+        <div id="add-replacement" class="tw:hidden tw:w-[728px]"></div>
+        <div id="feedback-desktop" class="tw:hidden">
+          <a id="ad-link">&nbsp;Learn Python App</a>
+        </div>
+        <div id="feedback-mobile" class="tw:block">
+          <a id="mobile-ad-link"
+            class="tw:no-underline tw:border tw:border-primary tw:text-primary tw:text-[12px] tw:box-border tw:rounded-sm tw:py-1.5 tw:px-4 tw:float-right tw:mr-4 tw:mt-3 tw:bg-[#f5f8ff] tw:font-medium tw:leading-[16px]">&nbsp;Learn
+            Python</a>
+        </div>
+      </div>
+
+      <div class="mobile-ad-wrapper clearfix tw:w-[300px] tw:h-[250px] tw:my-3 tw:mx-auto">
+                <div id='programizcom50430'>
+        </div>
+      </div>
+
+      <div
+        class="mobile-top-bar clearfix tw:flex tw:items-center tw:relative tw:p-2 tw:border-b tw:border-b-border tw:dark:border-b-white/20 tw:bg-white tw:dark:bg-[#2d2f34]">
+        <div class="pills-wrapper tw:float-left tw:flex tw:grow tw:w-1/2">
+          <div
+            class="pills clearfix tw:flex tw:max-w-[200px] tw:min-w-[175px] tw:text-center">
+            <button
+              class="pill active compiler-pill tw:bg-white tw:text-[rgba(51,51,51,0.6)] tw:py-1 tw:px-[15px] tw:text-sm tw:shadow-none tw:flex-1 tw:border tw:border-black/12 tw:border-l-white tw:border-r-white tw:box-border tw:max-w-full tw:overflow-hidden tw:whitespace-nowrap tw:text-ellipsis"
+              id="executed-file-name-mobile" title="main.py">
+              main.py            </button>
+            <button
+              class="pill shell-pill tw:bg-white tw:text-[rgba(51,51,51,0.6)] tw:py-1 tw:px-[15px] tw:text-sm tw:shadow-none tw:flex-1 tw:border tw:border-black/12 tw:border-l-white tw:border-r-white tw:box-border">
+              Output            </button>
+          </div>
+        </div>
+
+        <div class="other-options-wrapper tw:float-right tw:flex tw:items-center tw:gap-0.5">
+                              <div
+            class="mobile-top-bar-visualize-button visualize tw:cursor-pointer tw:bg-transparent tw:text-sm tw:text-text/70 tw:border tw:border-border tw:outline-none tw:rounded-xs tw:box-border tw:z-[109] tw:flex tw:flex-row tw:shrink-0 tw:items-center tw:justify-center tw:h-8 tw:py-1 tw:px-[14px] tw:w-fit tw:ml-2"
+            style="display: flex"
+            title="Visualize">
+                            <svg
+                class="visualize-start-icon tw:block tw:shrink-0 tw:w-[18px] tw:h-[18px] tw:text-inherit"
+                width="24"
+                height="24"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M8.00004 1.33331L14.6667 5.66665V10.3333L8.00004 14.6666L1.33337 10.3333V5.66665L8.00004 1.33331V1.33331Z" stroke="url(#paint0_linear_26731_46345)" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M8 14.6666V10.3333" stroke="url(#paint1_linear_26731_46345)" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M14.6667 5.66669L8.00004 10.3334L1.33337 5.66669" stroke="url(#paint2_linear_26731_46345)" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M1.33337 10.3334L8.00004 5.66669L14.6667 10.3334" stroke="url(#paint3_linear_26731_46345)" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M8 1.33331V5.66665" stroke="url(#paint4_linear_26731_46345)" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"></path>
+                <defs>
+                  <linearGradient id="paint0_linear_26731_46345" x1="8.00004" y1="1.33331" x2="8.00004" y2="14.6666" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00DBCD"></stop>
+                    <stop offset="1" stop-color="#00BBE1"></stop>
+                  </linearGradient>
+                  <linearGradient id="paint1_linear_26731_46345" x1="8.33333" y1="10.3333" x2="8.33333" y2="14.6666" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00DBCD"></stop>
+                    <stop offset="1" stop-color="#00BBE1"></stop>
+                  </linearGradient>
+                  <linearGradient id="paint2_linear_26731_46345" x1="8.00004" y1="5.66669" x2="8.00004" y2="10.3334" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00DBCD"></stop>
+                    <stop offset="1" stop-color="#00BBE1"></stop>
+                  </linearGradient>
+                  <linearGradient id="paint3_linear_26731_46345" x1="8.00004" y1="5.66669" x2="8.00004" y2="10.3334" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00DBCD"></stop>
+                    <stop offset="1" stop-color="#00BBE1"></stop>
+                  </linearGradient>
+                  <linearGradient id="paint4_linear_26731_46345" x1="8.33333" y1="1.33331" x2="8.33333" y2="5.66665" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00DBCD"></stop>
+                    <stop offset="1" stop-color="#00BBE1"></stop>
+                  </linearGradient>
+                </defs>
+              </svg>
+                            <svg class="visualize-stop-icon tw:hidden tw:shrink-0 tw:w-3 tw:h-3 tw:text-inherit" width="12"
+                height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="12" height="12" rx="2" fill="currentColor" />
+              </svg>
+            <span class="visualize-text tw:whitespace-nowrap tw:hidden">Visualize</span>
+          </div>
+                    <div
+            class="mobile-top-bar-run-button run tw:flex tw:items-center tw:box-border tw:h-8 tw:py-1.5 tw:px-4 tw:w-[52px] tw:justify-center tw:ml-2 tw:cursor-pointer tw:bg-primary tw:text-sm tw:text-white tw:border-0 tw:outline-none tw:rounded-xs tw:z-[109] tw:hover:bg-primary-hover">
+
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M2.91675 1.75L11.0834 7L2.91675 12.25V1.75Z" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+
+          </div>
+                    <div class="mobile-overflow-menu-wrapper tw:relative tw:flex tw:items-center tw:shrink-0 tw:ml-1">
+            <button type="button"
+              class="mobile-overflow-menu-btn tw:flex tw:items-center tw:justify-center tw:p-1.5 tw:bg-transparent tw:border-0 tw:rounded-xs tw:cursor-pointer"
+              id="toggle-overflow-menu-mobile" title="More options">
+              <img class="svg" src="https://cdn.playground-v2.programiz.com/assets/icons/more-vertical.svg" alt="" />
+            </button>
+            <div
+              class="mobile-overflow-menu tw:hidden tw:absolute tw:top-[calc(100%+8px)] tw:right-0 tw:flex-col tw:min-w-[160px] tw:bg-white tw:dark:bg-[#2d2f34] tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:shadow-[0px_4px_12px_0px_#000a010f] tw:p-1 tw:z-[110]"
+              id="mobile-overflow-menu">
+              <button type="button"
+                class="share-button-mob mobile-overflow-menu-item tw:flex tw:items-center tw:cursor-pointer tw:p-0 tw:bg-transparent tw:border-0"
+                title="Share">
+                <img class="svg share-icon tw:w-5 tw:h-5" src="https://cdn.playground-v2.programiz.com/assets/icons/share.svg" alt="" />
+                <span>Share</span>
+              </button>
+              <button type="button" id="open-contact-modal-mobile"
+                class="mobile-overflow-menu-item tw:flex tw:items-center tw:cursor-pointer tw:p-0 tw:bg-transparent tw:border-0"
+                title="Contact us">
+                <img class="svg tw:w-5 tw:h-5" src="https://cdn.playground-v2.programiz.com/assets/icons/message-square.svg" />
+                <span>Contact us</span>
+              </button>
+                            <button type="button" id="toggle-dark-mode-mobile"
+                class="mobile-overflow-menu-item tw:flex tw:items-center tw:cursor-pointer tw:p-0 tw:bg-transparent tw:border-0"
+                title="Toggle dark mode">
+                <svg class="toggle-dark-mode-mobile-icon moon tw:w-5 tw:h-5" width="18" height="18"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+                <svg class="toggle-dark-mode-mobile-icon sun tw:w-5 tw:h-5" width="18" height="18"
+                  viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="5" />
+                  <line x1="12" y1="1" x2="12" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" />
+                  <line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+                <span class="theme-menu-label to-dark">Dark mode</span>
+                <span class="theme-menu-label to-light tw:hidden">Light mode</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="main-content-wrapper tw:flex-1 tw:flex tw:min-h-0 tw:min-w-0 tw:h-full tw:w-full">
+        <div class="sidebar-wrapper tw:transition-all tw:duration-300 tw:ease-[ease] tw:w-0 tw:hidden">
+          <a target="_blank"
+            href="https://www.programiz.com/python-programming/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 python active"
+            title="Online Python Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/python.svg" alt="Python Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/r/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 r " title="Online R Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/r.svg" alt="R Programming Online" />
+          </a>
+
+          <a target="_blank" href="https://www.programiz.com/sql/online-compiler/" class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 sql"
+            title="Online SQL Editor">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/sql.svg" alt="SQL Online" />
+          </a>
+
+          <a target="_blank" href="https://www.programiz.com/html/online-compiler/" class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 html"
+            title="Online HTML/CSS Editor">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/html.svg" alt="HTML/CSS Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/java-programming/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 java " title="Online Java Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/java.svg" alt="Java Online" />
+          </a>
+                    <a target="_blank"
+            href="https://www.programiz.com/kotlin-programming/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 kotlin "
+            title="Online Kotlin Compiler (Editor)">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/kotlin.svg" alt="Kotlin Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/c-programming/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 c " title="Online C Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/c.svg" alt="C Programming Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/cpp-programming/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 cpp " title="Online C++ Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/cpp.svg" alt="C++ Programming Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/csharp-programming/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 csharp " title="Online C# Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/csharp.svg" alt="C# Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/javascript/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 javascript "
+            title="Online JavaScript Compiler (Editor)">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/javascript.svg" alt="JavaScript Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/typescript/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 typescript "
+            title="Online Typescript Compiler (Editor)">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/typescript.svg" alt="Typescript Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/golang/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 golang "
+            title="Online Golang Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/golang.svg" alt="Golang Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/rust/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 rust " title="Online Rust Compiler">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/rust.svg" alt="Rust Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/scala/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 scala "
+            title="Online Scala Compiler (Editor)">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/scala.svg" alt="Scala Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/dart/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 dart "
+            title="Online Dart Compiler (Editor)">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/dart.svg" alt="Dart Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/ruby/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 ruby "
+            title="Online Ruby Compiler (Editor)">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="./assets/icons/ruby.svg" alt="Ruby Online" />
+          </a>
+                    <a target="_blank"
+            href="https://www.programiz.com/php/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 php " title="Online PHP Compiler ">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/php.svg" alt="PHP Online" />
+          </a>
+          <a target="_blank"
+            href="https://www.programiz.com/swift/online-compiler/"
+            class="change-lang-btn tw:flex tw:text-center tw:bg-transparent tw:rounded-xs tw:border tw:border-border tw:p-[7px] tw:mb-3 swift " title="Online Swift Compiler ">
+            <img class="change-lang-btn-icon tw:h-[22px] tw:w-[22px] svg" src="https://cdn.playground-v2.programiz.com/assets/icons/swift.svg" alt="Swift Online" />
+          </a>
+        </div>
+        <div class="editor-workspace-wrapper tw:h-full tw:w-full tw:min-h-0 tw:min-w-0">
+          <div
+            class="split-panes-wrapper tw:flex-1 tw:w-full tw:h-full tw:min-h-0 tw:min-w-0 tw:flex">
+            <div
+              class="editor-wrapper tw:transition-all tw:duration-300 tw:ease-[ease] tw:h-full tw:w-full tw:min-h-0 tw:min-w-0 tw:relative tw:min-[800px]:w-[calc(50%_-_2px)] tw:min-[800px]:transition-[width] tw:min-[800px]:flex tw:min-[800px]:flex-col">
+              <div
+                class="editor-desktop-top-bar tw:bg-[#fbfbfb] tw:dark:bg-[#2d2f34] tw:dark:text-white tw:h-12 tw:hidden tw:min-[800px]:flex tw:min-[800px]:justify-between tw:min-[800px]:mb-1 tw:min-[800px]:shrink-0">
+                <div
+                  class="file-name tw:text-text/70 tw:text-[14px] tw:font-normal tw:items-center tw:bg-surface tw:leading-[24px] tw:py-3 tw:px-[18px] tw:border-r tw:border-r-border tw:border-t tw:border-t-border tw:border-b tw:border-b-surface tw:max-w-full tw:overflow-hidden tw:whitespace-nowrap tw:text-ellipsis"
+                  id="executed-file-name" title="main.py">
+                  main.py                </div>
+                <div class="desktop-top-bar__btn-wrapper">
+                                                                        <button
+                    class="desktop-visualize-button visualize tw:cursor-pointer tw:py-1.5 tw:px-4 tw:bg-transparent tw:text-sm tw:text-text/70 tw:border tw:border-border tw:outline-none tw:rounded-xs tw:box-border tw:z-[109] tw:flex tw:flex-row tw:shrink-0 tw:items-center tw:gap-1.5 tw:min-w-[67px] tw:h-8 tw:mt-0 tw:mr-0 tw:mb-0 tw:ml-4 tw:justify-center"
+                    style="display: flex">
+                                                            <span class="visualize-text tw:whitespace-nowrap">
+                      &nbsp;Visualize&nbsp;
+                    </span>
+                  </button>
+                                    <button
+                    class="desktop-run-button run tw:flex tw:items-center tw:shrink-0 tw:w-[80px] tw:h-8 tw:mt-0 tw:mr-3 tw:mb-0 tw:ml-4 tw:justify-center tw:cursor-pointer tw:py-1.5 tw:px-4 tw:bg-primary tw:text-sm tw:text-white tw:border-0 tw:outline-none tw:rounded-xs tw:z-[109] tw:hover:bg-primary-hover">
+                    <span class="run-text tw:inline-flex tw:items-center tw:gap-1">
+                      Run
+                   <svg width="13" height="13" viewBox="0 0 14 14"
+                    fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M2.91675 1.75L11.0834 7L2.91675 12.25V1.75Z"
+                      fill="#fff"
+                      stroke="#fff"
+                      stroke-width="1.4"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+                            <div class="skel-gutter" aria-hidden="true"><span class="skel-gutter-bar"></span>
+<span class="skel-gutter-bar"></span>
+<span class="skel-gutter-bar"></span>
+<span class="skel-gutter-bar"></span></div>
+              <div id="editor" class="skel-loading tw:w-full tw:h-full"><span class="skel-bar"># Online Python compiler (interpreter)</span>
+<span class="skel-bar"># Write and run Python online using this editor.</span>
+
+<span class="skel-bar">print("What does the Visualize button do?")</span></div>
+                            <div
+                class="visualize-decoration-overlay tw:absolute tw:inset-0 tw:pointer-events-none tw:overflow-hidden tw:hidden">
+              </div>
+            </div>
+
+                                    <div class="mobile-visualize-controls-root"></div>
+
+                        <div class="mobile-float-actions">
+                            <button
+                class="mobile-visualize-button visualize tw:cursor-pointer tw:py-1.5 tw:px-4 tw:bg-transparent tw:text-sm tw:text-text/70 tw:border tw:border-border tw:outline-none tw:rounded-xs tw:box-border tw:z-[109] tw:flex tw:items-center tw:gap-1"
+                style="display: flex">
+                <svg class="visualize-stop-icon tw:hidden tw:shrink-0 tw:w-3 tw:h-3 tw:text-inherit" width="12"
+                  height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="12" height="12" rx="2" fill="currentColor" />
+                </svg>
+                <span class="visualize-text tw:whitespace-nowrap">Visualize</span>
+              </button>
+              <button
+                class="mobile-run-button run tw:flex tw:items-center tw:cursor-pointer tw:py-1.5 tw:px-4 tw:bg-primary tw:text-sm tw:text-white tw:border-0 tw:outline-none tw:rounded-xs tw:z-[109] tw:hover:bg-primary-hover">
+                Run
+              </button>
+            </div>
+
+                        <div class="panes-divider tw:hidden" id="panes-divider" role="separator"
+              aria-orientation="vertical">
+              <span class="panes-divider__handle" aria-hidden="true">
+                <svg width="16" height="56" viewBox="0 0 16 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect class="panes-divider__handle-bg panes-divider__handle-border" x="0.5" y="0.5" width="15" height="55" rx="7.5" fill="white" stroke="#D3DCE6"/>
+                  <circle class="panes-divider__handle-dot" cx="6" cy="24" r="1" fill="#E3E3E3"/>
+                  <circle class="panes-divider__handle-dot" cx="10" cy="24" r="1" fill="#E3E3E3"/>
+                  <circle class="panes-divider__handle-dot" cx="6" cy="28" r="1" fill="#E3E3E3"/>
+                  <circle class="panes-divider__handle-dot" cx="10" cy="28" r="1" fill="#E3E3E3"/>
+                  <circle class="panes-divider__handle-dot" cx="6" cy="32" r="1" fill="#E3E3E3"/>
+                  <circle class="panes-divider__handle-dot" cx="10" cy="32" r="1" fill="#E3E3E3"/>
+                </svg>
+              </span>
+            </div>
+
+            <div
+              class="terminal-wrapper tw:hidden tw:relative tw:transition-all tw:duration-300 tw:ease-[ease] tw:h-full tw:w-full tw:min-h-0 tw:min-w-0 tw:min-[800px]:w-[calc(50%_-_2px)] tw:min-[800px]:transition-[width] tw:min-[800px]:flex tw:min-[800px]:flex-col">
+              <div
+                class="terminal-desktop-top-bar tw:bg-[#fbfbfb] tw:dark:bg-[#2d2f34] tw:dark:text-white tw:h-12 tw:hidden tw:min-[800px]:flex tw:min-[800px]:justify-between tw:min-[800px]:shrink-0">
+                <div
+                  class="shell-name tw:text-text/70 tw:dark:text-white tw:text-[14px] tw:font-normal tw:leading-[24px] tw:py-[11px] tw:px-[18px] tw:border-t tw:border-t-border tw:dark:border-t-white/20 tw:border-b tw:border-b-border tw:dark:border-b-white/20">
+                  Output                </div>
+                <div class="terminal-desktop-top-bar__btn-wrapper">
+                  <button
+                    class="share-button tw:flex tw:shrink-0 tw:items-center tw:justify-center tw:font-medium tw:text-sm tw:ml-4 tw:h-8 tw:rounded-xs tw:border-0 tw:bg-transparent tw:text-text/67 tw:dark:text-white tw:cursor-pointer tw:p-1.5"
+                    title="Share">
+                    <img class="toggle-expanded-mode-mobile-icon svg share-icon tw:w-5 tw:h-5" alt=""
+                      src="https://cdn.playground-v2.programiz.com/assets/icons/share.svg" />
+                  </button>
+                                    <div
+                    class="terminal-overflow-menu-wrapper tw:relative tw:flex tw:items-center tw:shrink-0 tw:ml-2">
+                    <button type="button"
+                      class="terminal-overflow-menu-btn tw:flex tw:items-center tw:justify-center tw:p-1.5 tw:bg-transparent tw:border-0 tw:rounded-xs tw:cursor-pointer"
+                      id="toggle-overflow-menu-desktop" title="More options">
+                      <img class="svg" src="https://cdn.playground-v2.programiz.com/assets/icons/more-vertical.svg" alt="" />
+                    </button>
+                    <div
+                      class="terminal-overflow-menu tw:hidden tw:absolute tw:top-[calc(100%+8px)] tw:right-0 tw:flex-col tw:min-w-[168px] tw:bg-white tw:dark:bg-[#2d2f34] tw:border tw:border-border tw:dark:border-white/20 tw:rounded-sm tw:shadow-[0px_4px_12px_0px_#000a010f] tw:p-1 tw:z-[110]"
+                      id="terminal-overflow-menu">
+                      <button type="button" id="toggle-expanded-mode-desktop"
+                        class="terminal-overflow-menu-item tw:flex tw:items-center tw:gap-4 tw:w-full tw:py-2 tw:px-3 tw:bg-transparent tw:border-0 tw:rounded-xs tw:text-sm tw:font-medium tw:text-text/70 tw:dark:text-white tw:text-left tw:cursor-pointer">
+                                                <svg class="fullscreen-menu-icon enter tw:w-[18px] tw:h-[18px] tw:block" width="18"
+                          height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5.038 2.22a.889.889 0 000-1.778v1.777zM.445 5.033a.889.889 0 101.778 0H.445zm13.334 0a.889.889 0 001.777 0H13.78zM10.964.44a.889.889 0 000 1.778V.441zm0 13.334a.889.889 0 000 1.778v-1.778zm4.592-2.815a.889.889 0 00-1.777 0h1.777zm-13.333 0a.889.889 0 00-1.778 0h1.778zm2.815 4.593a.889.889 0 000-1.778v1.778zm0-15.111H2.815v1.777h2.223V.442zm-2.223 0a2.37 2.37 0 00-2.37 2.37h1.778c0-.327.265-.593.592-.593V.442zm-2.37 2.37v2.222h1.778V2.812H.445zm15.111 2.222V2.812H13.78v2.222h1.777zm0-2.222a2.37 2.37 0 00-2.37-2.37v1.777c.327 0 .593.265.593.593h1.777zm-2.37-2.37h-2.222v1.777h2.222V.441zm-2.222 15.11h2.222v-1.777h-2.222v1.778zm2.222 0a2.37 2.37 0 002.37-2.37H13.78a.593.593 0 01-.593.593v1.778zm2.37-2.37V10.96H13.78v2.222h1.777zM.446 10.96v2.222h1.777V10.96H.445zm0 2.222a2.37 2.37 0 002.37 2.37v-1.777a.593.593 0 01-.593-.593H.445zm2.37 2.37h2.222v-1.777H2.816v1.778z" fill="currentColor" />
+                        </svg>
+                        <svg class="fullscreen-menu-icon exit tw:w-[18px] tw:h-[18px] tw:hidden" width="18"
+                          height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5.926 1.334a.889.889 0 10-1.778 0h1.778zM1.333 4.15a.889.889 0 100 1.778V4.149zm13.334 1.778a.889.889 0 000-1.778v1.778zm-2.815-4.593a.889.889 0 00-1.778 0h1.778zm-1.778 13.334a.889.889 0 001.778 0h-1.778zm4.593-2.815a.889.889 0 000-1.778v1.778zM1.334 10.075a.889.889 0 000 1.778v-1.778zm2.814 4.593a.889.889 0 001.778 0H4.148zm0-13.334v2.223h1.778V1.334H4.148zm0 2.223a.593.593 0 01-.592.592v1.778a2.37 2.37 0 002.37-2.37H4.148zm-.592.592H1.333v1.778h2.223V4.149zm11.11 0h-2.221v1.778h2.222V4.149zm-2.221 0a.593.593 0 01-.593-.593h-1.778a2.37 2.37 0 002.37 2.37V4.15zm-.593-.593V1.334h-1.778v2.222h1.778zm0 11.112v-2.222h-1.778v2.222h1.778zm0-2.222c0-.328.265-.593.593-.593v-1.778a2.37 2.37 0 00-2.37 2.37h1.777zm.593-.593h2.222v-1.778h-2.222v1.778zm-11.111 0h2.222v-1.778H1.334v1.778zm2.222 0c.327 0 .592.265.592.593h1.778a2.37 2.37 0 00-2.37-2.37v1.777zm.592.593v2.222h1.778v-2.222H4.148z" fill="currentColor" />
+                        </svg>
+                        <span class="fullscreen-menu-label enter">Full screen</span>
+                        <span class="fullscreen-menu-label exit tw:hidden">Exit full screen</span>
+                      </button>
+                      <button type="button" id="open-contact-modal-desktop"
+                        class="terminal-overflow-menu-item tw:flex tw:items-center tw:gap-4 tw:w-full tw:py-2 tw:px-3 tw:bg-transparent tw:border-0 tw:rounded-xs tw:text-sm tw:font-medium tw:text-text/70 tw:dark:text-white tw:text-left tw:cursor-pointer">
+                        <img class="svg tw:w-[18px] tw:h-[18px]" src="https://cdn.playground-v2.programiz.com/assets/icons/message-square.svg" />
+                        <span>Contact us</span>
+                      </button>
+                                            <button type="button" id="toggle-dark-mode-desktop"
+                        title="Toggle dark mode"
+                        class="terminal-overflow-menu-item tw:flex tw:items-center tw:gap-4 tw:w-full tw:py-2 tw:px-3 tw:bg-transparent tw:border-0 tw:rounded-xs tw:text-sm tw:font-medium tw:text-text/70 tw:dark:text-white tw:text-left tw:cursor-pointer">
+                        <svg class="toggle-dark-mode-desktop-icon moon tw:w-[18px] tw:h-[18px] tw:block"
+                          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                        <svg class="toggle-dark-mode-desktop-icon sun tw:w-[18px] tw:h-[18px] tw:hidden"
+                          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff"
+                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="5" />
+                          <line x1="12" y1="1" x2="12" y2="3" />
+                          <line x1="12" y1="21" x2="12" y2="23" />
+                          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                          <line x1="1" y1="12" x2="3" y2="12" />
+                          <line x1="21" y1="12" x2="23" y2="12" />
+                          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                        </svg>
+                        <span class="theme-menu-label to-dark">Dark mode</span>
+                        <span class="theme-menu-label to-light tw:hidden">Light mode</span>
+                      </button>
+                    </div>
+                  </div>
+                                    <div
+                    class="visualize-controls-root tw:hidden tw:items-center tw:justify-center tw:flex-[0_0_100%] tw:mt-1">
+                  </div>
+                </div>
+              </div>
+                            <div id="terminal" class="stdin-idle tw:w-full tw:h-full"></div>
+                            <div
+                class="visualize-canvas-root tw:hidden tw:w-full tw:h-full tw:box-border tw:bg-white tw:dark:bg-[#1f2023] tw:overflow-hidden">
+              </div>
+            </div>
+            <div class="desktop-right-ad tw:hidden">
+                                <div id='programizcom50429'>
+                </div>
+
+                                <div class="desktop-right-ad-bottom">
+                  <div id='programizcom50459'>
+                  </div>
+                </div>
+              </div>
+          </div>
+
+                  </div>
+      </div>
+    </div>
+  </div>
+
+  <script defer type="text/javascript">
+    const lang = "python";
+
+    var playStoreUrl =
+      "https://play.google.com/store/apps/details?id=com.programiz.learnpython",
+      appStoreUrl =
+      "https://apps.apple.com/app/apple-store/id1472188189?pt=120228772",
+      desktopUrl = "https://www.programiz.com/learn-python";
+
+    const desktopAdsButton = document.getElementById("ad-link");
+    const mobileAdsButton = document.getElementById("mobile-ad-link");
+
+    const challengeLinkProbability = 0 / 100; // in percentage
+    const hasChallengeLinkAsAds = Math.random() <= challengeLinkProbability;
+
+    if (hasChallengeLinkAsAds) {
+      const baseURL = "https://app.programiz.pro/community-challenges/home"
+      desktopAdsButton.innerHTML = `Python Challenges ❯`;
+      mobileAdsButton.innerHTML = `Python Challenges`;
+      desktopAdsButton.href = baseURL;
+      mobileAdsButton.href = baseURL;
+    } else {
+      const utm = "utm_source=programiz_compiler&utm_medium=referral&utm_audience=ORGANIC-FREEMIUM&utm_campaign=offer-pro&utm_content=interests_pro&utm_term=nav_floating_button"
+      const baseURL = `https://programiz.pro?${utm}`
+
+      desktopAdsButton.innerHTML = `Programiz PRO ❯`;
+      mobileAdsButton.innerHTML = `Programiz PRO`;
+      desktopAdsButton.href = baseURL;
+      mobileAdsButton.href = baseURL;
+    }
+
+    desktopAdsButton.target = "_blank"
+    mobileAdsButton.target = "_blank"
+  </script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.5/socket.io.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.4.6/mousetrap.min.js"></script>
+  <script>
+    // Read by src/setPublicPath.js so webpack's runtime chunk loader (used
+    // by dynamic import(), e.g. the Visualize module) requests the same
+    // origin this entry bundle itself was served from, instead of always
+    // defaulting to same-origin /build/.
+    window.__ASSET_PATH__ = "https://cdn.playground-v2.programiz.com/";
+
+    // Read by src/client.js on page load to auto-enter Visualize mode for links that carry
+    // ?visualize=true - see the matching comment in config.php for how this is read from $_GET.
+    window.__VISUALIZE_ON_LOAD__ = false;
+  </script>
+  <script defer src="https://cdn.playground-v2.programiz.com/build/final.0ce3abd404f6abe5d060.js"></script>
+
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TKXT7MH" height="0" width="0"
+      style="display:none;visibility:hidden"></iframe></noscript>
+  
+      <div
+    id="fluid-privacy-opt-out-link"
+    onmouseover="this.style.color='rgb(25, 103, 210)'; this.style.cursor='pointer'"
+    onmouseout="this.style.color='#CCCCCC'; this.style.cursor='auto'"></div>
+  <script type="text/javascript">
+    const privacyOptOutLink = document.getElementById("fluid-privacy-opt-out-link");
+    window.googlefc = window.googlefc || {
+      callbackQueue: []
+    };
+    window.googlefc.ccpa = window.googlefc.ccpa || {}
+    window.googlefc.callbackQueue.push({
+      "CONSENT_API_READY": () => {
+        if (!privacyOptOutLink) {
+          return;
+        }
+        privacyOptOutLink.addEventListener("click", () => googlefc.showRevocationMessage());
+        !!window.__tcfapi && window.__tcfapi("addEventListener", 2, (tcData, success) => {
+          if (success && tcData.gdprApplies) {
+            privacyOptOutLink.innerText = "Change GDPR Consent";
+            return;
+          }
+          if (googlefc.ccpa.InitialCcpaStatusEnum() === googlefc.ccpa.InitialCcpaStatusEnum.NOT_OPTED_OUT) {
+            window.googlefc.ccpa.overrideDnsLink = true;
+            privacyOptOutLink.innerText = "Don't sell or share my personal info";
+            privacyOptOutLink.addEventListener("click", () => googlefc.ccpa.openConfirmationDialog((optedOut) => {
+              if (optedOut) {
+                privacyOptOutLink.style.display = "none";
+              }
+            }));
+            return
+          }
+        });
+      }
+    });
+  </script>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a407fede9c714814',t:'MTc5MDMxNzk4Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"0a465ad039704d1f9760ad556f6f3cdd","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+
+</html>
